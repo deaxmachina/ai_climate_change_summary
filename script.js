@@ -7,7 +7,7 @@ let data = {}
 ///////////////////////////////////////////
 const width = 1400; 
 const height = 4600; 
-const treeHorizontalStretch = 48
+const treeHorizontalStretch = 45
 const treeVerticalStretch = 2
 
 const linkColour = "#8F9294"
