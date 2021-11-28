@@ -29,6 +29,13 @@ const heighLeverageCol = "#448D9A"
 const uncertainImpactCol = "#F0A63B"
 const longTermCol = "#DD4066"
 
+  // select elements of the pop-up info box for nodes info - will display on node click
+  // TODO: this should be added and removed because it interferes with interactions otherwise
+  const selectedNodeInfo = d3.select(".selected-node-info")
+  const selectedNodeInfoTitle = selectedNodeInfo.select("h3")
+  const selectedNodeInfoSummary = selectedNodeInfo.select("p")
+  const selectedNodeInfoTags = selectedNodeInfo.select('div')
+
 ///////////////////////////////////////////
 //////////// Helper Functions /////////////
 ///////////////////////////////////////////
@@ -56,7 +63,7 @@ const processDataForTree = rawData => {
 /// Set up the tree functions - call them later /// 
 const tree = d3.tree().nodeSize([dx, dy])
 const diagonal = d3.linkHorizontal()
-  .x(d => d.y)
+  .x(d => d.y-10)
   .y(d => d.x)
 
 
@@ -132,15 +139,6 @@ function treeGraph (svg, data) {
     });
 
     // Control the height of the svg with um nodes
-    //let height = right.x - left.x + margin.top + margin.bottom;
-    // console.log(nodes)
-    // if (nodes.length < 30) {
-    //   height = 900
-    // } else if (nodes.length < 40) {
-    //   height = 2200
-    // } else {
-    //   height = 3500
-    // }
     height = nodes.length*50 // better solution
 
     const transition = svg.transition()
@@ -163,15 +161,6 @@ function treeGraph (svg, data) {
       .attr('stroke-opacity', 1)
       .attr('stroke-width', 1)
       .attr("stroke-dasharray", "2 1")
-
-    ////////////////////////////
-    ////////// Nodes ///////////
-    ////////////////////////////
-    // Just the container groups for nodes
-    const gNode = svg.selectAll(".node-g")
-      .data([null])
-      .join('g')
-      .classed("node-g", true)
 
     //////////////////////////////
     // Links content and update //
@@ -199,6 +188,16 @@ function treeGraph (svg, data) {
      .transition(transition)
        .attr("d", diagonal)
 
+    
+    ////////////////////////////
+    ////////// Nodes ///////////
+    ////////////////////////////
+    // Just the container groups for nodes
+    const gNode = svg.selectAll(".node-g")
+      .data([null])
+      .join('g')
+      .classed("node-g", true)
+
     //////////////////////////////
     // Nodes content and update //
     //////////////////////////////
@@ -211,14 +210,37 @@ function treeGraph (svg, data) {
             .attr("fill-opacity", 0)
             .attr("stroke-opacity", 0)
             .style("cursor", "pointer")
-            .on("click", (e, d) => {
-              console.log('node was clicked', d)
-              d.children = d.children ? null : d._children;
-              update(d);
+            .on("click", (e, datum) => {
+              datum.children = datum.children ? null : datum._children;
+              update(datum)
+              //make the pop-up info box visible and populate with info about node
+              if (!datum.children && datum.data.title) {
+                gNode.attr("opacity", 0.2)
+                gLink.attr("opacity", 0.1)
+                selectedNodeInfo.classed("visible", true)
+                selectedNodeInfoTitle.text(datum.data.title)
+                selectedNodeInfoSummary.text(datum.data.summary)
+                selectedNodeInfoTags.selectAll("div")
+                  .data(datum.data.topic_keywords)
+                  .join("div")
+                  .text(d => `#${d}`) 
+              }
+            })
+            .on("mouseover", function(e, datum) {
+              nodeShape
+                .attr('fill', d => d === datum ? nodeHoverColour : d.children ? nodeDarkColour : nodeColour)
+              nodeText
+                .style('fill', d => d === datum ? '#fff' : d.children ? textLightColour : textDarkColour)
+            })
+            .on("mouseout", function(e, datum) {
+              nodeShape
+                .attr("fill", d => d.children ? nodeDarkColour : nodeColour)
+              nodeText
+                .style("fill", d => d.children ? textLightColour : textDarkColour)
             })
           // Add the rects for boxes on nodes
-          nodeEnter.append('rect')
-            .attr("fill", d => d.data.children ? nodeDarkColour : nodeColour)
+          const nodeShape = nodeEnter.append('rect')
+            .attr("fill", d => d.children ? nodeDarkColour : nodeColour)
             .attr("stroke", linkColour)
             .attr("stroke-linejoin", 'round')
             .attr("stroke-width", 1)
@@ -230,12 +252,26 @@ function treeGraph (svg, data) {
             .attr("rx", '5')
             .style("filter", "url(#glow)")
         // Add the text on rects
-        nodeEnter.append("text")
+        const nodeText = nodeEnter.append("text")
             .attr("dy", "0.35em")
             .attr("x", d => d.datachildren ? 0 : 10)
             .attr("text-anchor", d => d.data.children ? "middle" : "start")
-            .style("fill", d => d.data.children ? textLightColour : textDarkColour)
+            .style("fill", d => d.children ? textLightColour : textDarkColour)
             .text(d => d.data.name)
+
+        // to the right of each node, add rects for each of the tags 
+        nodeEnter.selectAll(".node-tag")
+          .data(d => d.data.paper_flags ? d.data.paper_flags : [])
+          .join("rect")
+          .classed("node-tag", true)
+            .attr("width", nodeHeight/1.5)
+            .attr('height', nodeHeight)
+            .attr("fill", d => d == 'High Leverage' ? heighLeverageCol : d == 'Long-term' ? longTermCol : d == 'Uncertain Impact' ? uncertainImpactCol : 'black')
+            .attr("x", (d, i) => (nodeWidth + nodeWidthExtra + 2 + i*nodeHeight/1.5))
+            .attr("y", -nodeHeight/2)
+            .attr("stroke", 'white')
+            .attr("stroke-width", 2)
+            .attr("rx", '5')
 
         return nodeEnter
         }, 
@@ -259,6 +295,18 @@ function treeGraph (svg, data) {
         d.x0 = d.x;
         d.y0 = d.y;
       })
+
+      // on click on the selection (currently whole svg), make the whole graph opaque again
+      svg.on("click", function(e, datum){
+        // check if the click ocurred on the target or not 
+        // if it's "false" then the click did not happen on the target 
+        if (this == e.target) {
+          gNode.attr("opacity", 1)
+          gLink.attr("opacity", 1)
+          selectedNodeInfo.classed("visible", false)
+        }
+      })
+
   }
 
   // Call the update function
