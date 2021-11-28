@@ -47,13 +47,6 @@ function treeGraph (svg, data) {
     if (d.depth) d.children = null
   })
 
-  // container for the whole tree
-  // const g = svg.selectAll(".tree-g")
-  //   .data([null])
-  //   .join("g")
-  //   .classed("tree-g", true)
-  //     .attr('transform', `translate(${width/4}, ${height/2})`)
-
   const gLink = svg.append('g')
     .attr('fill', 'none')
     .attr('stroke', '#555')

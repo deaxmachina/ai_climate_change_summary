@@ -124,3 +124,9 @@ text {
   color: var(--dark-colour);
   font-weight: bold;
 }
+
+.graph-container {
+  height: 700px;
+  overflow-y: auto;
+  background-color: red;
+}
