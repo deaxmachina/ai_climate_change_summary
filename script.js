@@ -227,8 +227,7 @@ function treeGraph (selection, data) {
     selectedNodeInfoTags.selectAll("div")
       .data(datum.data.topic_keywords)
       .join("div")
-      .text(d => `#${d}`)
-      
+      .text(d => `#${d}`)  
   })
 
   // on click on the selection (currently whole svg), make the whole graph opaque again
