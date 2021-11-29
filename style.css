@@ -83,8 +83,13 @@ text {
   cursor: pointer;
   transition: all 0.3s ease;
 }
+.selected-node-info a {
+  text-decoration: none;
+  color: var(--white-colour);
+  transition: all 0.3s ease;
+}
 
-.selected-node-info button:hover {
+.selected-node-info button:hover, .selected-node-info a:hover {
   background-color: #5aacbb;
 }
 

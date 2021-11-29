@@ -25,9 +25,9 @@ const nodeHoverColour = "#BDBDCD"
 const textDarkColour = '#76797a'
 const textLightColour = '#fff'
 
-const heighLeverageCol = '#3273B0'//"#448D9A"
-const uncertainImpactCol = '#7A46BC' // original - '#D4B13B'//"#F0A63B"
-const longTermCol = '#33764D'// original - '#33764D'; other - "#DD4066"
+const heighLeverageCol = "#448D9A"// original - '#3273B0'; other - "#448D9A"
+const uncertainImpactCol = "#F0A63B" // original - '#D4B13B'; other - "#F0A63B"
+const longTermCol = "#DD4066"// original - '#33764D'; other - "#DD4066"
 
 // select elements of the pop-up info box for nodes info - will display on node click
 // TODO: this should be added and removed because it interferes with interactions otherwise
@@ -41,9 +41,9 @@ const addNodeInfoBox = () => {
   const selectedNodeInfo = d3.select('body').append('div').classed('selected-node-info', true)
   const selectedNodeInfoTitle = selectedNodeInfo.append('h3')
   const selectedNodeInfoSummary = selectedNodeInfo.append("p")
-  const selectedNodeInfoButton = selectedNodeInfo.append('button').html('Read More')
+  const selectedNodeInfoButton = selectedNodeInfo.append('button').append('a').html('Read More')
   const selectedNodeInfoTags = selectedNodeInfo.append('div').classed('selected-node-info__tags', true)
-  const selection = {selectedNodeInfo, selectedNodeInfoTitle, selectedNodeInfoSummary, selectedNodeInfoTags}
+  const selection = {selectedNodeInfo, selectedNodeInfoTitle, selectedNodeInfoSummary, selectedNodeInfoButton, selectedNodeInfoTags}
   return selection
 }
 const removeNodeInfoBox = () => {
@@ -232,12 +232,14 @@ function treeGraph (svg, data) {
                 gNode.attr("opacity", 0.2)
                 gLink.attr("opacity", 0.1)
 
-                const {selectedNodeInfo, selectedNodeInfoTitle, selectedNodeInfoSummary, selectedNodeInfoTags} = addNodeInfoBox()
+                const {selectedNodeInfo, selectedNodeInfoTitle, selectedNodeInfoSummary, selectedNodeInfoButton, selectedNodeInfoTags} = addNodeInfoBox()
                 selectedNodeInfo.classed("visible", true)
                 selectedNodeInfoTitle.text(datum.data.title)
                 selectedNodeInfoSummary.text(datum.data.summary)
+                // add link to the paper section on click of button
+                selectedNodeInfoButton.attr('href', `https://www.climatechange.ai/paper#${datum.data.pdf_location}`)
                 selectedNodeInfoTags.selectAll("div")
-                  .data(datum.data.topic_keywords)
+                  .data([...datum.data.topic_keywords, ...datum.data.ml_keywords, ...datum.data.thematic_keywords])
                   .join("div")
                   .text(d => `#${d}`) 
               }
