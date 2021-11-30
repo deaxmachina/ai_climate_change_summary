@@ -1,4 +1,4 @@
-let data = {} 
+
 
 ///////////////////////////////////////////
 //////////////// Constants ////////////////
@@ -54,8 +54,26 @@ const removeNodeInfoBox = () => {
 //////////// Helper Functions /////////////
 ///////////////////////////////////////////
 
+async function getData() {
+  const data = await d3.json("./data/section-summaries.json")
+  return data
+}
+
+// whether to filter the data 
+const filterData = rawData => {
+  let filteredData = []
+  for (const section of rawData) {
+    filteredData.push({
+      title: section.title,
+      subsections: section.subsections.filter(d => d["ml_keywords"].includes("uncertainty quantification"))
+    })
+  }
+  return filteredData
+}
+
 // process the data in the name-children format for d3 hierarcy
 const processDataForTree = rawData => {
+  const data = {}
   let processedData = []
   rawData.forEach(d => {
     processedData.push({
@@ -85,9 +103,18 @@ const diagonal = d3.linkHorizontal()
 /////////// Main Graph Wrapper Function ///////////
 //////////////////////////////////////////////////
 async function graph() {
-  const rawData = await d3.json("./data/section-summaries.json");
-  const data = processDataForTree(rawData)
-  const svg = d3.select("svg")
+  let inputData = await getData()
+  let dataPreProcess; 
+  if (filtered) {
+    dataPreProcess = filterData(inputData)
+  } else {
+    dataPreProcess = [...inputData]
+  }
+  const data = processDataForTree(dataPreProcess)
+  console.log('data', data)
+  const svg = d3.select('.svg-wrapper')
+    .selectAll("svg").data([null]).join('svg')
+    .classed('svg', true)
     //.style('background-color', 'pink')
     .attr("width", width)
     .attr("height", height)
@@ -97,21 +124,26 @@ async function graph() {
   svg.call(treeGraph, data) 
 }
 
+// root needs to be a global variable to make sure it's not just instantiated once in the 
+// treeGraph function and then just its properties are changed
+var root
 
 ///////////////////////////////////////////////////
 /////////////// Tree Graph Function ///////////////
 //////////////////////////////////////////////////
 function treeGraph (svg, data) {
 
-  const root = d3.hierarchy(data)
-  // root.dx = treeHorizontalStretch; // horizontal spread of the nodes 
-  // root.dy = width / (root.height + treeVerticalStretch) // vertical spread of the tree (how 'squished' it is)
+  root = d3.hierarchy(data)
+  
   root.x0 = dy/2
   root.y0 = 0
   root.descendants().forEach((d, i) => {
     d.id = i;
     d._children = d.children;
-    if (d.depth) d.children = null
+    if (!filtered) {
+      if (d.depth) d.children = null
+    }
+    //if (d.depth) d.children = null
   })
 
   ////////////////////////////
@@ -119,12 +151,12 @@ function treeGraph (svg, data) {
   ////////////////////////////
   // from Nadieh Bremer https://www.visualcinnamon.com/2016/06/glow-filter-d3-visualization/ 
   const defs = svg.append("defs");
-  const filter = defs.append("filter")
+  const filterGlow = defs.append("filter")
       .attr("id","glow");
-  filter.append("feGaussianBlur")
+  filterGlow.append("feGaussianBlur")
       .attr("stdDeviation","1.5")
       .attr("result","coloredBlur");
-  const feMerge = filter.append("feMerge");
+  const feMerge = filterGlow.append("feMerge");
   feMerge.append("feMergeNode")
       .attr("in","coloredBlur");
   feMerge.append("feMergeNode")
@@ -138,7 +170,7 @@ function treeGraph (svg, data) {
   // of the nodes, as well as change height based on num nodes to show
 
   function update(source) {
-    const duration = d3.event && d3.event.altKey ? 250 : 250;
+    const duration = d3.event && d3.event.altKey ? 2500 : 500;
     const nodes = root.descendants().reverse();
     const links = root.links();
 
@@ -159,7 +191,7 @@ function treeGraph (svg, data) {
       .duration(duration)
       .attr('height', height)
       .attr("viewBox", [-margin.left, left.x - margin.top, width, height])
-      .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
+      //.tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
 
 
     ////////////////////////////
@@ -226,7 +258,7 @@ function treeGraph (svg, data) {
             .style("cursor", "pointer")
             .on("click", (e, datum) => {
               datum.children = datum.children ? null : datum._children;
-              update(datum)
+              if (!filtered) update(datum)
               //make the pop-up info box visible and populate with info about node
               if (!datum.children && datum.data.title) {
                 gNode.attr("opacity", 0.2)
@@ -333,5 +365,16 @@ function treeGraph (svg, data) {
      
 }
 
-graph()
+// filter button to test if filtering works 
+var filtered = false
+d3.select('#filter-btn')
+  .on('click', function(){
+    filtered = !filtered
+    console.log('filtered', filtered)
+    // remove the whole graph and re-draw it with filtered data
+    //d3.select('svg').remove()
+    graph()
+  })
 
+
+graph()
