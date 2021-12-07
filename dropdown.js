@@ -25,6 +25,7 @@ dropdownMLContainer.append('input')
   .classed('checkbox-item', true)
 
 dropdownMLContainer.append('label')
+. classed('checkbox-label', true)
   .attr('for', d => d)
   .html(d => d)
 

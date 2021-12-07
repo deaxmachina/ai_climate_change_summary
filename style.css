@@ -150,9 +150,10 @@ text {
 .dropdown-menu {
   text-align: left;
   font-size: 14px;
+  color: var(--light-colour);
 }
 
-.dropdown-menu label {
+.checkbox-label {
   margin-left: 10px;
   color: var(--light-colour);
 }
