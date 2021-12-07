@@ -60,12 +60,12 @@ async function getData() {
 }
 
 // whether to filter the data 
-const filterData = rawData => {
+const filterData = (rawData, keyword) => {
   let filteredData = []
   for (const section of rawData) {
     filteredData.push({
       title: section.title,
-      subsections: section.subsections.filter(d => d["ml_keywords"].includes("uncertainty quantification"))
+      subsections: section.subsections.filter(d => d["ml_keywords"].includes(keyword))
     })
   }
   return filteredData
@@ -102,11 +102,11 @@ const diagonal = d3.linkHorizontal()
 ///////////////////////////////////////////////////
 /////////// Main Graph Wrapper Function ///////////
 //////////////////////////////////////////////////
-async function graph() {
+async function graph(filtered, keyword) {
   let inputData = await getData()
   let dataPreProcess; 
   if (filtered) {
-    dataPreProcess = filterData(inputData)
+    dataPreProcess = filterData(inputData, keyword)
   } else {
     dataPreProcess = [...inputData]
   }
@@ -211,8 +211,9 @@ function treeGraph (svg, data) {
     //////////////////////////////
     // Links content and update //
     //////////////////////////////
+    console.log('links', links)
     const link = gLink.selectAll("path")
-      .data(links, d => d.target.id)
+      .data(links, d => d.target.data.name)
       .join(
        enter => {
          const enterLink = enter.append('path')
@@ -247,8 +248,9 @@ function treeGraph (svg, data) {
     //////////////////////////////
     // Nodes content and update //
     //////////////////////////////
+    console.log('nodes', nodes)
     const node = gNode.selectAll("g")
-    .data(nodes, d => d.id)
+    .data(nodes, d => d.data.name)
       .join(
         enter => { //enter new nodes at parent's prev pos
           const nodeEnter = enter.append('g')
@@ -366,15 +368,18 @@ function treeGraph (svg, data) {
 }
 
 // filter button to test if filtering works 
-var filtered = false
-d3.select('#filter-btn')
-  .on('click', function(){
-    filtered = !filtered
-    console.log('filtered', filtered)
-    // remove the whole graph and re-draw it with filtered data
-    //d3.select('svg').remove()
-    graph()
-  })
+// let filtered = false
+const keyword = "uncertainty quantification"
+// d3.select('#filter-btn')
+//   .on('click', function(){
+//     filtered = !filtered
+//     console.log('filtered', filtered)
+//     // remove the whole graph and re-draw it with filtered data
+//     //d3.select('svg').remove()
+//     graph(filtered, keyword)
+//   })
 
 
-graph()
+// graph(filtered, keyword)
+
+graph(filtered=false, keyword)

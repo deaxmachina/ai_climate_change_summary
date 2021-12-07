@@ -138,3 +138,29 @@ text {
   overflow-y: auto;
   background-color: red;
 }
+
+/********* Drop down **********/
+.dropdown-menu-container {
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  top: 200px;
+  width: 250px;
+}
+.dropdown-menu {
+  text-align: left;
+  font-size: 14px;
+}
+
+.dropdown-menu label {
+  margin-left: 10px;
+  color: var(--light-colour);
+}
+
+@media (max-width: 900px) {
+  .dropdown-menu-container {
+    left: 20px;
+    top: 50px;
+    width: 250px;
+  }
+}
